@@ -7,92 +7,107 @@ const ARROW_KEYS = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
 
 const CHALLENGES = [
   {
-    label: "North",
-    display: "Up",
+    label: "Nord",
+    display: "Opp",
     symbol: "N",
+    pointClass: "n",
     requiredKeys: ["ArrowUp"],
-    prompts: ["Captain, sail north!", "Raise the bow north!", "Steer up!"],
+    prompts: ["Kaptein, seil nordover!", "Løft baugen mot nord!", "Styr opp!"],
     vector: { x: 0, y: -1 },
     rotation: 0,
   },
   {
-    label: "South",
-    display: "Down",
+    label: "Sør",
+    display: "Ned",
     symbol: "S",
+    pointClass: "s",
     requiredKeys: ["ArrowDown"],
-    prompts: ["Steer south!", "Sail down the map!", "Bring us south!"],
+    prompts: ["Styr sørover!", "Seil nedover kartet!", "Ta oss mot sør!"],
     vector: { x: 0, y: 1 },
     rotation: 180,
   },
   {
-    label: "West",
-    display: "Left",
-    symbol: "W",
+    label: "Vest",
+    display: "Venstre",
+    symbol: "V",
+    pointClass: "w",
     requiredKeys: ["ArrowLeft"],
-    prompts: ["Head west!", "Hard to port!", "Steer left!"],
+    prompts: ["Sett kurs vestover!", "Hardt mot babord!", "Styr til venstre!"],
     vector: { x: -1, y: 0 },
     rotation: -90,
   },
   {
-    label: "East",
-    display: "Right",
-    symbol: "E",
+    label: "Øst",
+    display: "Høyre",
+    symbol: "Ø",
+    pointClass: "e",
     requiredKeys: ["ArrowRight"],
-    prompts: ["Turn east!", "Hard to starboard!", "Steer right!"],
+    prompts: ["Sving østover!", "Hardt mot styrbord!", "Styr til høyre!"],
     vector: { x: 1, y: 0 },
     rotation: 90,
   },
   {
-    label: "Northeast",
-    display: "Up + Right",
-    symbol: "NE",
+    label: "Nordøst",
+    display: "Opp + Høyre",
+    symbol: "NØ",
+    pointClass: "ne",
     requiredKeys: ["ArrowUp", "ArrowRight"],
-    prompts: ["Turn northeast!", "Catch the northeast wind!", "Up and right, Captain!"],
+    prompts: ["Sving nordøst!", "Fang nordøstvinden!", "Opp og høyre, kaptein!"],
     vector: { x: 1, y: -1 },
     rotation: 45,
   },
   {
-    label: "Northwest",
-    display: "Up + Left",
-    symbol: "NW",
+    label: "Nordvest",
+    display: "Opp + Venstre",
+    symbol: "NV",
+    pointClass: "nw",
     requiredKeys: ["ArrowUp", "ArrowLeft"],
-    prompts: ["Head northwest!", "Up and left, Captain!", "Take us northwest!"],
+    prompts: ["Sett kurs nordvest!", "Opp og venstre, kaptein!", "Ta oss mot nordvest!"],
     vector: { x: -1, y: -1 },
     rotation: -45,
   },
   {
-    label: "Southeast",
-    display: "Down + Right",
-    symbol: "SE",
+    label: "Sørøst",
+    display: "Ned + Høyre",
+    symbol: "SØ",
+    pointClass: "se",
     requiredKeys: ["ArrowDown", "ArrowRight"],
-    prompts: ["Sail southeast!", "Down and right, Captain!", "Set course southeast!"],
+    prompts: ["Seil sørøst!", "Ned og høyre, kaptein!", "Sett kurs sørøst!"],
     vector: { x: 1, y: 1 },
     rotation: 135,
   },
   {
-    label: "Southwest",
-    display: "Down + Left",
-    symbol: "SW",
+    label: "Sørvest",
+    display: "Ned + Venstre",
+    symbol: "SV",
+    pointClass: "sw",
     requiredKeys: ["ArrowDown", "ArrowLeft"],
-    prompts: ["Swing southwest!", "Down and left, Captain!", "Set course southwest!"],
+    prompts: ["Sving sørvest!", "Ned og venstre, kaptein!", "Sett kurs sørvest!"],
     vector: { x: -1, y: 1 },
     rotation: -135,
   },
 ];
 
 const CORRECT_FEEDBACK = [
-  "Aye aye, perfect!",
-  "Smooth sailing!",
-  "Great steering, Captain!",
-  "That is the right heading!",
+  "Ja vel, perfekt!",
+  "Flott seiling!",
+  "Suveren styring, kaptein!",
+  "Det er riktig kurs!",
 ];
 
 const WRONG_FEEDBACK = [
-  "Oops, check the compass!",
-  "Try that heading again!",
-  "Almost, Captain!",
-  "Let's steer the other way!",
+  "Oi, sjekk kompasset!",
+  "Prøv den kursen igjen!",
+  "Nesten, kaptein!",
+  "La oss styre en annen vei!",
 ];
+
+const KEY_LABELS = {
+  ArrowUp: "Opp",
+  ArrowDown: "Ned",
+  ArrowLeft: "Venstre",
+  ArrowRight: "Høyre",
+};
 
 function randomItem(items) {
   return items[Math.floor(Math.random() * items.length)];
@@ -118,7 +133,7 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(GAME_SECONDS);
   const [currentChallenge, setCurrentChallenge] = useState(() => getRandomChallenge());
   const [pressedKeys, setPressedKeys] = useState([]);
-  const [feedback, setFeedback] = useState("Pip is ready with your first heading.");
+  const [feedback, setFeedback] = useState("Pip er klar med første kurs.");
   const [lastAnswerState, setLastAnswerState] = useState("neutral");
   const [shipMotion, setShipMotion] = useState({ x: 0, y: 0, rotation: 0 });
   const [answeredToken, setAnsweredToken] = useState(0);
@@ -192,7 +207,7 @@ function App() {
     setScore(0);
     setStreak(0);
     setTimeLeft(GAME_SECONDS);
-    setFeedback("Follow Pip's heading!");
+    setFeedback("Følg kursen fra Pip!");
     setLastAnswerState("neutral");
     setShipMotion({ x: 0, y: 0, rotation: 0 });
     setCurrentChallenge(getRandomChallenge());
@@ -213,7 +228,7 @@ function App() {
         if (value <= 1) {
           window.clearInterval(timerId);
           setGameState("finished");
-          setFeedback("Time is up, Captain!");
+          setFeedback("Tiden er ute, kaptein!");
           setLastAnswerState("neutral");
           resetRoundInput();
           return 0;
@@ -265,11 +280,11 @@ function App() {
     <main className={`app app-${gameState}`}>
       <GameHeader score={score} streak={streak} timeLeft={timeLeft} />
 
-      <section className="game-shell" aria-label="Captain's Compass game">
+      <section className="game-shell" aria-label="Kapteinens Kompass-spill">
         <div className="prompt-column">
           <PipPrompt
             gameState={gameState}
-            prompt={gameState === "playing" ? currentPrompt : "Ready to steer, Captain?"}
+            prompt={gameState === "playing" ? currentPrompt : "Klar til å styre, kaptein?"}
             feedback={feedback}
             lastAnswerState={lastAnswerState}
           />
@@ -298,13 +313,13 @@ function GameHeader({ score, streak, timeLeft }) {
   return (
     <header className="game-header">
       <div>
-        <p className="eyebrow">Pip's navigation school</p>
-        <h1>Captain's Compass</h1>
+        <p className="eyebrow">Pips navigasjonsskole</p>
+        <h1>Kapteinens Kompass</h1>
       </div>
-      <div className="stats" aria-label="Game stats">
-        <Stat label="Score" value={score} />
-        <Stat label="Streak" value={streak} />
-        <Stat label="Time" value={`${timeLeft}s`} />
+      <div className="stats" aria-label="Spillstatistikk">
+        <Stat label="Poeng" value={score} />
+        <Stat label="Rekke" value={streak} />
+        <Stat label="Tid" value={`${timeLeft}s`} />
       </div>
     </header>
   );
@@ -334,7 +349,7 @@ function PipPrompt({ gameState, prompt, feedback, lastAnswerState }) {
         <div className="pip-claws" />
       </div>
       <div className="speech-bubble">
-        <p className="prompt-text">{gameState === "finished" ? "Voyage complete!" : prompt}</p>
+        <p className="prompt-text">{gameState === "finished" ? "Reisen er fullført!" : prompt}</p>
         <p className={`feedback feedback-${lastAnswerState}`}>{feedback}</p>
       </div>
     </section>
@@ -343,12 +358,12 @@ function PipPrompt({ gameState, prompt, feedback, lastAnswerState }) {
 
 function CompassDisplay({ challenge, pressedKeys, gameState, answeredToken }) {
   return (
-    <section className="compass-panel" aria-label="Current direction challenge">
+    <section className="compass-panel" aria-label="Nåværende retningsoppgave">
       <div className="compass">
         {CHALLENGES.map((item) => (
           <span
             key={item.label}
-            className={`compass-point point-${item.symbol.toLowerCase()} ${
+            className={`compass-point point-${item.pointClass} ${
               item.label === challenge.label ? "active" : ""
             }`}
           >
@@ -363,14 +378,14 @@ function CompassDisplay({ challenge, pressedKeys, gameState, answeredToken }) {
         <div className="compass-center" />
       </div>
       <div className="direction-card">
-        <span className="direction-label">Pip says</span>
-        <strong>{gameState === "playing" ? challenge.display : "Press Start"}</strong>
-        <span>{gameState === "playing" ? challenge.label : "Begin the voyage"}</span>
+        <span className="direction-label">Pip sier</span>
+        <strong>{gameState === "playing" ? challenge.display : "Trykk Start"}</strong>
+        <span>{gameState === "playing" ? challenge.label : "Start reisen"}</span>
       </div>
-      <div className="key-row" aria-label="Pressed arrow keys">
+      <div className="key-row" aria-label="Trykkede piltaster">
         {ARROW_KEYS.map((key) => (
           <kbd key={key} className={pressedKeys.includes(key) ? "pressed" : ""}>
-            {key.replace("Arrow", "")}
+            {KEY_LABELS[key]}
           </kbd>
         ))}
       </div>
@@ -386,7 +401,7 @@ function ShipScene({ challenge, motion, lastAnswerState, gameState }) {
   };
 
   return (
-    <section className="sea-scene" aria-label="Ship steering scene">
+    <section className="sea-scene" aria-label="Scene der skipet styres">
       <div className="sun" />
       <div className="cloud cloud-one" />
       <div className="cloud cloud-two" />
@@ -400,7 +415,7 @@ function ShipScene({ challenge, motion, lastAnswerState, gameState }) {
           <div className="porthole one" />
           <div className="porthole two" />
         </div>
-        <p className="ship-heading">{gameState === "playing" ? challenge.label : "At anchor"}</p>
+        <p className="ship-heading">{gameState === "playing" ? challenge.label : "Til ankers"}</p>
       </div>
       <div className="wave wave-one" />
       <div className="wave wave-two" />
@@ -414,11 +429,11 @@ function Controls({ gameState, onStart, onRestart, score }) {
     return (
       <section className="controls game-over" aria-live="polite">
         <div>
-          <span className="direction-label">Final score</span>
+          <span className="direction-label">Sluttpoeng</span>
           <strong>{score}</strong>
         </div>
         <button type="button" onClick={onRestart}>
-          Restart Voyage
+          Start reisen på nytt
         </button>
       </section>
     );
@@ -428,11 +443,11 @@ function Controls({ gameState, onStart, onRestart, score }) {
     <section className="controls">
       {gameState === "idle" ? (
         <button type="button" onClick={onStart}>
-          Start Game
+          Start spillet
         </button>
       ) : (
         <button type="button" onClick={onRestart}>
-          Restart
+          Start på nytt
         </button>
       )}
     </section>
