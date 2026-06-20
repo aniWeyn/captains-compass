@@ -89,17 +89,17 @@ const CHALLENGES = [
 ];
 
 const CORRECT_FEEDBACK = [
-  "Ja vel, perfekt!",
-  "Flott seiling!",
-  "Suveren styring, kaptein!",
-  "Det er riktig kurs!",
+  "Riktig! Vi seiler rett vei!",
+  "Flott styring! Skipet følger kursen!",
+  "Ja vel, kaptein! Det var riktig retning!",
+  "Perfekt! Kompasset og skipet er enige!",
 ];
 
 const WRONG_FEEDBACK = [
-  "Oi, sjekk kompasset!",
-  "Prøv den kursen igjen!",
-  "Nesten, kaptein!",
-  "La oss styre en annen vei!",
+  "Å nei, vi styrer feil vei!",
+  "Oops! Skipet kom ut av kurs!",
+  "Nesten, kaptein, men det var feil retning!",
+  "Sjekk kompasset! Vi må styre en annen vei!",
 ];
 
 const KEY_LABELS = {
@@ -137,6 +137,7 @@ function App() {
   const [lastAnswerState, setLastAnswerState] = useState("neutral");
   const [shipMotion, setShipMotion] = useState({ x: 0, y: 0, rotation: 0 });
   const [answeredToken, setAnsweredToken] = useState(0);
+  const launchTimerRef = useRef();
   const lockedRef = useRef(false);
 
   const currentPrompt = useMemo(() => randomItem(currentChallenge.prompts), [currentChallenge]);
@@ -177,7 +178,7 @@ function App() {
         nextChallenge();
         resetRoundInput();
         setLastAnswerState("neutral");
-      }, 700);
+      }, 1500);
     },
     [currentChallenge, gameState, nextChallenge, resetRoundInput],
   );
@@ -203,15 +204,21 @@ function App() {
   );
 
   const startGame = useCallback(() => {
-    setGameState("playing");
+    window.clearTimeout(launchTimerRef.current);
+    setGameState("launching");
     setScore(0);
     setStreak(0);
     setTimeLeft(GAME_SECONDS);
-    setFeedback("Følg kursen fra Pip!");
+    setFeedback("Pip tar med startknappen tilbake til masten!");
     setLastAnswerState("neutral");
     setShipMotion({ x: 0, y: 0, rotation: 0 });
     setCurrentChallenge(getRandomChallenge());
     resetRoundInput();
+
+    launchTimerRef.current = window.setTimeout(() => {
+      setGameState("playing");
+      setFeedback("Følg kursen fra Pip!");
+    }, 880);
   }, [resetRoundInput]);
 
   const restartGame = useCallback(() => {
@@ -240,6 +247,10 @@ function App() {
 
     return () => window.clearInterval(timerId);
   }, [gameState, resetRoundInput]);
+
+  useEffect(() => {
+    return () => window.clearTimeout(launchTimerRef.current);
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -278,38 +289,32 @@ function App() {
 
   return (
     <main className={`app app-${gameState}`}>
-      <GameHeader score={score} streak={streak} timeLeft={timeLeft} />
+      <GameHeader
+        score={score}
+        streak={streak}
+        timeLeft={timeLeft}
+        gameState={gameState}
+        onStart={startGame}
+        onRestart={restartGame}
+        finalScore={score}
+      />
 
       <section className="game-shell" aria-label="Kapteinens Kompass-spill">
-        <div className="prompt-column">
-          <PipPrompt
-            gameState={gameState}
-            prompt={gameState === "playing" ? currentPrompt : "Klar til å styre, kaptein?"}
-            feedback={feedback}
-            lastAnswerState={lastAnswerState}
-          />
-          <CompassDisplay
-            challenge={currentChallenge}
-            pressedKeys={pressedKeys}
-            gameState={gameState}
-            answeredToken={answeredToken}
-          />
-        </div>
-
         <ShipScene
           challenge={currentChallenge}
           motion={shipMotion}
           lastAnswerState={lastAnswerState}
           gameState={gameState}
+          pressedKeys={pressedKeys}
+          answeredToken={answeredToken}
+          onStart={startGame}
         />
-
-        <Controls gameState={gameState} onStart={startGame} onRestart={restartGame} score={score} />
       </section>
     </main>
   );
 }
 
-function GameHeader({ score, streak, timeLeft }) {
+function GameHeader({ score, streak, timeLeft, gameState, onStart, onRestart, finalScore }) {
   return (
     <header className="game-header">
       <div>
@@ -321,6 +326,7 @@ function GameHeader({ score, streak, timeLeft }) {
         <Stat label="Rekke" value={streak} />
         <Stat label="Tid" value={`${timeLeft}s`} />
       </div>
+      <Controls gameState={gameState} onStart={onStart} onRestart={onRestart} score={finalScore} />
     </header>
   );
 }
@@ -334,9 +340,11 @@ function Stat({ label, value }) {
   );
 }
 
-function PipPrompt({ gameState, prompt, feedback, lastAnswerState }) {
+function CompassPip({ gameState, lastAnswerState, onStart }) {
+  const isStartMoment = gameState === "idle" || gameState === "launching";
+
   return (
-    <section className="pip-area" aria-live="polite">
+    <div className={`pip-perch pip-perch-${gameState}`}>
       <div className={`pip pip-${lastAnswerState}`} aria-hidden="true">
         <div className="pip-feather" />
         <div className="pip-body">
@@ -348,37 +356,53 @@ function PipPrompt({ gameState, prompt, feedback, lastAnswerState }) {
         </div>
         <div className="pip-claws" />
       </div>
-      <div className="speech-bubble">
-        <p className="prompt-text">{gameState === "finished" ? "Reisen er fullført!" : prompt}</p>
-        <p className={`feedback feedback-${lastAnswerState}`}>{feedback}</p>
-      </div>
-    </section>
+      {isStartMoment ? (
+        <div className="start-bubble">
+          <p className="start-title">Hei, kaptein!</p>
+          <p className="start-copy">
+            Jeg er Pip. Kompasset viser kursen, og du styrer skipet med piltastene.
+            Noen ganger trenger vi to piler samtidig!
+          </p>
+          <button
+            className="pip-start-button"
+            type="button"
+            onClick={onStart}
+            disabled={gameState === "launching"}
+          >
+            {gameState === "launching" ? "Starter..." : "Start spillet"}
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
-function CompassDisplay({ challenge, pressedKeys, gameState, answeredToken }) {
+function CompassDisplay({ challenge, pressedKeys, gameState, answeredToken, lastAnswerState, onStart }) {
   return (
     <section className="compass-panel" aria-label="Nåværende retningsoppgave">
-      <div className="compass">
-        {CHALLENGES.map((item) => (
-          <span
-            key={item.label}
-            className={`compass-point point-${item.pointClass} ${
-              item.label === challenge.label ? "active" : ""
-            }`}
-          >
-            {item.symbol}
-          </span>
-        ))}
-        <div
-          key={answeredToken}
-          className="compass-needle"
-          style={{ transform: `translate(-50%, -82%) rotate(${challenge.rotation}deg)` }}
-        />
-        <div className="compass-center" />
+      <div className="compass-wrap">
+        <CompassPip gameState={gameState} lastAnswerState={lastAnswerState} onStart={onStart} />
+        <div className="compass">
+          {CHALLENGES.map((item) => (
+            <span
+              key={item.label}
+              className={`compass-point point-${item.pointClass} ${
+                item.label === challenge.label ? "active" : ""
+              }`}
+            >
+              {item.symbol}
+            </span>
+          ))}
+          <div
+            key={answeredToken}
+            className="compass-needle"
+            style={{ transform: `translate(-50%, -82%) rotate(${challenge.rotation}deg)` }}
+          />
+          <div className="compass-center" />
+        </div>
       </div>
       <div className="direction-card">
-        <span className="direction-label">Pip sier</span>
+        <span className="direction-label">Kompasskurs</span>
         <strong>{gameState === "playing" ? challenge.display : "Trykk Start"}</strong>
         <span>{gameState === "playing" ? challenge.label : "Start reisen"}</span>
       </div>
@@ -393,7 +417,15 @@ function CompassDisplay({ challenge, pressedKeys, gameState, answeredToken }) {
   );
 }
 
-function ShipScene({ challenge, motion, lastAnswerState, gameState }) {
+function ShipScene({
+  challenge,
+  motion,
+  lastAnswerState,
+  gameState,
+  pressedKeys,
+  answeredToken,
+  onStart,
+}) {
   const shipStyle = {
     "--ship-x": `${motion.x * 18}px`,
     "--ship-y": `${motion.y * 14}px`,
@@ -417,6 +449,14 @@ function ShipScene({ challenge, motion, lastAnswerState, gameState }) {
         </div>
         <p className="ship-heading">{gameState === "playing" ? challenge.label : "Til ankers"}</p>
       </div>
+      <CompassDisplay
+        challenge={challenge}
+        pressedKeys={pressedKeys}
+        gameState={gameState}
+        answeredToken={answeredToken}
+        lastAnswerState={lastAnswerState}
+        onStart={onStart}
+      />
       <div className="wave wave-one" />
       <div className="wave wave-two" />
       <div className="wave wave-three" />
@@ -425,6 +465,10 @@ function ShipScene({ challenge, motion, lastAnswerState, gameState }) {
 }
 
 function Controls({ gameState, onStart, onRestart, score }) {
+  if (gameState === "idle" || gameState === "launching") {
+    return null;
+  }
+
   if (gameState === "finished") {
     return (
       <section className="controls game-over" aria-live="polite">
